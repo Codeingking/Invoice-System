@@ -107,7 +107,12 @@
 
   <button class="btn" onclick="window.print()">🖨️ Print Invoice</button>
   <button id="uploadToDrive" class="btn" style="background:#4285f4; color:#fff" disabled>Upload to Google Drive</button>
-
+  <button onclick="generateInvoice()">Generate PDF</button>
+  <div class="offline-notice" id="offlineNotice">⚠️ You are offline. The invoice will be saved locally.</div>
+  <div class="preview-box">
+    <h3>Preview Before Upload:</h3>
+    <iframe id="pdfPreview" width="100%" height="500px"></iframe>
+    <button onclick="uploadWhenOnline()">Upload Invoice</button>
   <script>
     
   </script>
