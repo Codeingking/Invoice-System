@@ -59,20 +59,49 @@ const productData = {
       document.getElementById('invoiceDate').valueAsDate = new Date();
     });
 
-    function addRow() {
-      const tbody = document.getElementById('productBody');
-      const row = document.createElement('tr');
-      const options = Object.keys(productData).map(p => `<option>${p}</option>`).join('');
-      row.innerHTML = `
-        <td><select onchange="updateRow(this)"><option value="">product  </option>${options}</select></td>
-        <td><input type="number" class="rate" oninput="recalc(this)"></td>
-        <td><input type="number" class="boxes" oninput="recalc(this)"></td>
-        <td><input type="number" class="totalSqft" readonly></td>
-        <td><input type="text" class="gst" readonly></td>
-        <td><input type="number" class="amount" readonly></td>
-      `;
-      tbody.appendChild(row);
-    }
+
+function addRow() {
+  const tbody = document.getElementById('productBody');
+  
+  if (!tbody) {
+    console.error('Element with ID "productBody" not found. Cannot add row.');
+    return false;
+  }
+  
+  // Additional safety: check if productData exists
+  if (typeof productData === 'undefined' || !productData) {
+    console.error('productData is not defined. Cannot populate product options.');
+    return false;
+  }
+  
+  try {
+    const row = document.createElement('tr');
+    const options = Object.keys(productData)
+      .map(p => `<option value="${p}">${p}</option>`)
+      .join('');
+    
+    row.innerHTML = `
+      <td><select onchange="updateRow(this)">
+        <option value="">Select product</option>
+        ${options}
+      </select></td>
+      <td><input type="number" class="rate" oninput="recalc(this)" min="0" step="0.01"></td>
+      <td><input type="number" class="boxes" oninput="recalc(this)" min="0" step="1"></td>
+      <td><input type="number" class="totalSqft" readonly></td>
+      <td><input type="text" class="gst" readonly></td>
+      <td><input type="number" class="amount" readonly></td>
+    `;
+    
+    tbody.appendChild(row);
+    return true; // Success indicator
+    
+  } catch (error) {
+    console.error('Error adding row:', error);
+    return false;
+  }
+}
+
+
     function updateRow(select) {
       const row = select.closest('tr');
       const data = productData[select.value];
@@ -121,6 +150,9 @@ const productData = {
     }
 
     // ========== GOOGLE DRIVE UPLOAD SECTION ==========
+// ==== GOOGLE API loader ====
+
+
     // -- REPLACE with your Google credentials:
     const CLIENT_ID = '744066733293-ccg0f7s4rfjdvo0a92f2oq9ka28n9ufi.apps.googleusercontent.com';
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
@@ -260,11 +292,15 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
+function loadGapi() {
+  const s = document.createElement('script');
+  s.src = 'https://apis.google.com/js/api.js?onload=gapiLoaded';
+  s.async = true;
+  document.body.appendChild(s);
+}
+if (document.readyState === 'loading') {        // still parsing?
+  document.addEventListener('DOMContentLoaded', loadGapi); // safe run
+} else {
+  loadGapi(); // DOM already ready
+}
 
-    // TRIGGER GAPI LOADING
-    (function(){
-      var s = document.createElement('script');
-      s.src = "https://apis.google.com/js/api.js?onload=gapiLoaded";
-      s.async = true;
-      document.body.appendChild(s);
-    })();
