@@ -229,13 +229,17 @@ const productData = {
       return resp.result;
     }
 
-    document.getElementById('uploadToDrive').addEventListener('click', async function() {
+// Only adding the fixed upload event listener code here for brevity:
+window.addEventListener('DOMContentLoaded', () => {
+  const uploadBtn = document.getElementById('uploadToDrive');
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', async function () {
       this.disabled = true;
       try {
         await authenticate();
         const folderName = getMonthFolderName();
         const folderId = await getOrCreateFolder(folderName);
-        const invoiceNo = (document.getElementById('invoiceNo').value || '').replace(/[^a-zA-Z0-9]/gi,'');
+        const invoiceNo = (document.getElementById('invoiceNo').value || '').replace(/[^a-zA-Z0-9]/gi, '');
         const buyer = getBuyerName();
         const invoiceDateVal = document.getElementById('invoiceDate').value;
         const fileDate = formatDateYYMMDD(invoiceDateVal);
@@ -243,13 +247,19 @@ const productData = {
 
         const pdfBlob = await generatePDFBlob();
         await uploadPdfToDrive(pdfBlob, filename, folderId);
-        alert('Invoice uploaded successfully to your Google Drive:\nFile: ' + filename + '\nFolder: '+folderName);
+        alert('Invoice uploaded successfully to your Google Drive:\nFile: ' + filename + '\nFolder: ' + folderName);
       } catch (e) {
-        alert('Upload failed:\n'+(e.message || e));
+        alert('Upload failed:\n' + (e.message || e));
         console.error(e);
       }
       this.disabled = false;
     });
+  } else {
+    console.error("Element #uploadToDrive not found!");
+  }
+});
+
+
 
     // TRIGGER GAPI LOADING
     (function(){
