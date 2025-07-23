@@ -154,7 +154,7 @@ function addRow() {
 
 
     // -- REPLACE with your Google credentials:
-    const CLIENT_ID = '744066733293-ccg0f7s4rfjdvo0a92f2oq9ka28n9ufi.apps.googleusercontent.com';
+    const CLIENT_ID = '68542936063-jn0q2f3c9o47gtk0716jbqqlrrh5t8n6.apps.googleusercontent.com';
     const SCOPES = "https://www.googleapis.com/auth/drive.file";
     const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
 
