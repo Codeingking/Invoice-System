@@ -291,6 +291,22 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+const errorDetails = {
+  code: 500,
+  data: { id: 123 }
+};
+
+// Include details in the message
+throw new Error(`API error: ${JSON.stringify(errorDetails)}`);
+
+// Or attach details to the error object (requires a try-catch block to access)
+try {
+  const err = new Error("API error");
+  err.details = errorDetails;
+  throw err;
+} catch (e) {
+  console.error(e.message, e.details);
+}
 
 function loadGapi() {
   const s = document.createElement('script');
