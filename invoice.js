@@ -1,4 +1,9 @@
+
+    // invoice.js - Updated and organized version
+
+// ========== PRODUCT DATA ==========
 const productData = {
+
       "AGED OAK AC HF001585": { rate: 62.5, sqft: 30, gst: 18 },
       "BRUNETTE WOOD AC HF001581": { rate: 62.5, sqft: 30, gst: 18 },
       "DARK WALNUT AC HF001584": { rate: 62.5, sqft: 30, gst: 18 },
@@ -46,266 +51,162 @@ const productData = {
       "CTY00216": { rate: 85, sqft: 53.82, gst: 12 },
       "CTY00217": { rate: 85, sqft: 53.82, gst: 12 }
     };
+  // ... (truncated for brevity, all your productData goes here)
 
-    // Invoice number auto-increment and assign date
-    function getNextInvoiceNumber() {
-      let num = parseInt(localStorage.getItem('lastInvoiceNo') || "0", 10);
-      num += 1;
-      localStorage.setItem('lastInvoiceNo', num);
-      return 'PI' + num.toString().padStart(3, '0');
-    }
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('invoiceNo').value = getNextInvoiceNumber();
-      document.getElementById('invoiceDate').valueAsDate = new Date();
-    });
+// ========== INITIALIZE INVOICE ==========
+function getNextInvoiceNumber() {
+  let num = parseInt(localStorage.getItem('lastInvoiceNo') || "0", 10);
+  num += 1;
+  localStorage.setItem('lastInvoiceNo', num);
+  return 'PI' + num.toString().padStart(3, '0');
+}
 
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('invoiceNo').value = getNextInvoiceNumber();
+  document.getElementById('invoiceDate').valueAsDate = new Date();
+});
 
+// ========== ROW HANDLING ==========
 function addRow() {
   const tbody = document.getElementById('productBody');
-  
-  if (!tbody) {
-    console.error('Element with ID "productBody" not found. Cannot add row.');
-    return false;
-  }
-  
-  // Additional safety: check if productData exists
-  if (typeof productData === 'undefined' || !productData) {
-    console.error('productData is not defined. Cannot populate product options.');
-    return false;
-  }
-  
+  if (!tbody) return console.error('Missing #productBody');
+
   try {
     const row = document.createElement('tr');
-    const options = Object.keys(productData)
-      .map(p => `<option value="${p}">${p}</option>`)
-      .join('');
-    
+    const options = Object.keys(productData).map(p => `<option value="${p}">${p}</option>`).join('');
     row.innerHTML = `
-      <td><select onchange="updateRow(this)">
-        <option value="">Select product</option>
-        ${options}
-      </select></td>
+      <td><select onchange="updateRow(this)"><option value="">Select product</option>${options}</select></td>
       <td><input type="number" class="rate" oninput="recalc(this)" min="0" step="0.01"></td>
       <td><input type="number" class="boxes" oninput="recalc(this)" min="0" step="1"></td>
       <td><input type="number" class="totalSqft" readonly></td>
       <td><input type="text" class="gst" readonly></td>
       <td><input type="number" class="amount" readonly></td>
     `;
-    
     tbody.appendChild(row);
-    return true; // Success indicator
-    
   } catch (error) {
     console.error('Error adding row:', error);
-    return false;
   }
 }
 
+function updateRow(select) {
+  const row = select.closest('tr');
+  const data = productData[select.value];
+  if (!data) return;
+  row.querySelector('.rate').value = data.rate;
+  row.dataset.sqftPerBox = data.sqft;
+  row.dataset.gst = data.gst;
+  row.querySelector('.gst').value = data.gst + '%';
+  recalc(select);
+}
 
-    function updateRow(select) {
-      const row = select.closest('tr');
-      const data = productData[select.value];
-      if (!data) return;
-      row.querySelector('.rate').value = data.rate;
-      row.dataset.sqftPerBox = data.sqft;
-      row.dataset.gst = data.gst;
-      row.querySelector('.gst').value = data.gst + '%';  // Shows "12%" or "18%"
-      recalc(select);
-    }
-    function recalc(input) {
-      const row = input.closest('tr');
-      const rate = parseFloat(row.querySelector('.rate').value) || 0;
-      const boxes = parseFloat(row.querySelector('.boxes').value) || 0;
-      const sqft = parseFloat(row.dataset.sqftPerBox) || 0;
-      const gst = parseFloat(row.dataset.gst) || 0;  // Uses numeric value from dataset
+function recalc(input) {
+  const row = input.closest('tr');
+  const rate = parseFloat(row.querySelector('.rate').value) || 0;
+  const boxes = parseFloat(row.querySelector('.boxes').value) || 0;
+  const sqft = parseFloat(row.dataset.sqftPerBox) || 0;
+  const gst = parseFloat(row.dataset.gst) || 0;
 
-      const totalSqft = boxes * sqft;
-      const baseAmount = totalSqft * rate;
-      const gstAmount = baseAmount * gst / 100;
-      const totalAmount = baseAmount + gstAmount;
+  const totalSqft = boxes * sqft;
+  const baseAmount = totalSqft * rate;
+  const gstAmount = baseAmount * gst / 100;
+  const totalAmount = baseAmount + gstAmount;
 
-      row.querySelector('.totalSqft').value = totalSqft.toFixed(2);
-      row.querySelector('.amount').value = totalAmount.toFixed(2);
-      row.dataset.gstAmount = gstAmount.toFixed(2);
+  row.querySelector('.totalSqft').value = totalSqft.toFixed(2);
+  row.querySelector('.amount').value = totalAmount.toFixed(2);
+  row.dataset.gstAmount = gstAmount.toFixed(2);
 
-      calculateTotal();
-    }
-    function calculateTotal() {
-      let total = 0, gstTotal = 0;
-      document.querySelectorAll('#productBody tr').forEach(row => {
-        total += parseFloat(row.querySelector('.amount').value) || 0;
-        gstTotal += parseFloat(row.dataset.gstAmount) || 0;
-      });
+  calculateTotal();
+}
 
-      const freight = parseFloat(document.getElementById("deliveryCharge").value || 0);
-      const freightGST = freight * 0.18;
-      const freightTotal = freight + freightGST;
+function calculateTotal() {
+  let total = 0, gstTotal = 0;
+  document.querySelectorAll('#productBody tr').forEach(row => {
+    total += parseFloat(row.querySelector('.amount').value) || 0;
+    gstTotal += parseFloat(row.dataset.gstAmount) || 0;
+  });
 
-      document.getElementById("grandTotal").innerText = total.toFixed(2);
-      document.getElementById("deliveryAmount").innerText = freightTotal.toFixed(2);
-      document.getElementById("gstAmount").innerText = (gstTotal + freightGST).toFixed(2);
-      document.getElementById("finalAmount").innerText = (total + freightTotal).toFixed(2);
+  const freight = parseFloat(document.getElementById("deliveryCharge").value || 0);
+  const freightGST = freight * 0.18;
+  const freightTotal = freight + freightGST;
 
-      document.getElementById("deliveryLine").style.display = freight > 0 ? "table-row" : "none";
-    }
+  document.getElementById("grandTotal").innerText = total.toFixed(2);
+  document.getElementById("deliveryAmount").innerText = freightTotal.toFixed(2);
+  document.getElementById("gstAmount").innerText = (gstTotal + freightGST).toFixed(2);
+  document.getElementById("finalAmount").innerText = (total + freightTotal).toFixed(2);
+  document.getElementById("deliveryLine").style.display = freight > 0 ? "table-row" : "none";
+}
 
-    // ========== GOOGLE DRIVE UPLOAD SECTION ==========
-// ==== GOOGLE API loader ====
+// ========== GOOGLE DRIVE ==========
+const CLIENT_ID = '68542936063-jn0q2f3c9o47gtk0716jbqqlrrh5t8n6.apps.googleusercontent.com';
+const SCOPES = "https://www.googleapis.com/auth/drive.file";
+const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
 
+function gapiLoaded() {
+  gapi.load('client:auth2', initClient);
+}
 
-    // -- REPLACE with your Google credentials:
-    const CLIENT_ID = '68542936063-jn0q2f3c9o47gtk0716jbqqlrrh5t8n6.apps.googleusercontent.com';
-    const SCOPES = "https://www.googleapis.com/auth/drive.file";
-    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
+function initClient() {
+  gapi.client.init({ clientId: CLIENT_ID, discoveryDocs: DISCOVERY_DOCS, scope: SCOPES })
+    .then(() => document.getElementById('uploadToDrive').disabled = false);
+}
 
-    function gapiLoaded() {
-      gapi.load('client:auth2', initClient);
-    }
-    function initClient() {
-      gapi.client.init({
-        clientId: CLIENT_ID,
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-      }).then(() => {
-        document.getElementById('uploadToDrive').disabled = false;
-      });
-    }
+async function authenticate() {
+  const auth = gapi.auth2.getAuthInstance();
+  if (!auth.isSignedIn.get()) await auth.signIn();
+}
 
-    window.gapiLoaded = gapiLoaded;
+async function getOrCreateFolder(folderName) {
+  const resp = await gapi.client.drive.files.list({
+    q: `mimeType='application/vnd.google-apps.folder' and trashed=false and name='${folderName}'`,
+    fields: 'files(id,name)'
+  });
+  if (resp.result.files.length) return resp.result.files[0].id;
 
-    async function authenticate() {
-      let auth = gapi.auth2.getAuthInstance();
-      if (!auth.isSignedIn.get()) {
-        await auth.signIn();
-      }
-    }
-    async function getOrCreateFolder(folderName) {
-      const resp = await gapi.client.drive.files.list({
-        q: `mimeType='application/vnd.google-apps.folder' and trashed=false and name='${folderName}'`,
-        fields: 'files(id,name)'
-      });
-      if(resp.result.files.length) return resp.result.files[0].id;
-      const create = await gapi.client.drive.files.create({
-        resource: {
-          name: folderName,
-          mimeType: 'application/vnd.google-apps.folder'
-        },
-        fields: 'id'
-      });
-      return create.result.id;
-    }
-    function getMonthFolderName() {
-      const field = document.getElementById('invoiceDate');
-      let m;
-      if(field.value) {
-        m = new Date(field.value);
-      } else {
-        m = new Date();
-      }
-      const month = m.toLocaleString('default', {month:'long'});
-      return `Shakuntalam Pi ${month}`;
-    }
-    function formatDateYYMMDD(dstr) {
-      const d = dstr ? new Date(dstr) : new Date();
-      const y = d.getFullYear().toString().slice(-2);
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}/${m}/${day}`;
-    }
-    function getBuyerName() {
-      const txt = document.getElementById('buyerName').value;
-      const first = (txt.split('\n')[0] || '').trim();
-      return first.replace(/[^\w\s\-]/g,'').replace(/\s+/g,'-') || 'Buyer';
-    }
-    function generatePDFBlob() {
-      return html2canvas(document.body, {scale:2}).then(canvas => {
-        const img = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF({ unit:'pt', format:'a4' });
-        const w = pdf.internal.pageSize.getWidth();
-        const imgHeight = canvas.height * w / canvas.width;
-        pdf.addImage(img, 'PNG', 0, 0, w, imgHeight);
-        return pdf.output('blob');
-      });
-    }
-    async function uploadPdfToDrive(pdfBlob, filename, folderId) {
-      const boundary = 'foo_bar_baz';
-      let delimiter = "\r\n--" + boundary + "\r\n";
-      let close_delim = "\r\n--" + boundary + "--";
-      const metadata = {
-        'name': filename,
-        'mimeType': 'application/pdf',
-        'parents': [folderId]
-      };
-      const fileData = await new Promise(resolve=>{
-        const r = new FileReader();
-        r.onload = ()=>resolve(r.result);
-        r.readAsBinaryString(pdfBlob);
-      });
-      const base64data = btoa(fileData);
+  const create = await gapi.client.drive.files.create({
+    resource: { name: folderName, mimeType: 'application/vnd.google-apps.folder' },
+    fields: 'id'
+  });
+  return create.result.id;
+}
 
-      const multipartRequestBody =
-          delimiter +
-          'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-          JSON.stringify(metadata) +
-          delimiter +
-          'Content-Type: application/pdf\r\n' + 'Content-Transfer-Encoding: base64\r\n' + '\r\n' +
-          base64data +
-          close_delim;
-      const resp = await gapi.client.request({
-        path: '/upload/drive/v3/files',
-        method: 'POST',
-        params: {uploadType: 'multipart'},
-        headers: {'Content-Type': 'multipart/related; boundary=' + boundary},
-        body: multipartRequestBody
-      });
-      return resp.result;
-    }
+function generatePDFBlob() {
+  return html2canvas(document.body, { scale: 2 }).then(canvas => {
+    const img = canvas.toDataURL('image/png');
+    const pdf = new jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+    const w = pdf.internal.pageSize.getWidth();
+    const h = canvas.height * w / canvas.width;
+    pdf.addImage(img, 'PNG', 0, 0, w, h);
+    return pdf.output('blob');
+  });
+}
 
-// Only adding the fixed upload event listener code here for brevity:
-window.addEventListener('DOMContentLoaded', () => {
-  const uploadBtn = document.getElementById('uploadToDrive');
-  if (uploadBtn) {
-    uploadBtn.addEventListener('click', async function () {
-      this.disabled = true;
-      try {
-        await authenticate();
-        const folderName = getMonthFolderName();
-        const folderId = await getOrCreateFolder(folderName);
-        const invoiceNo = (document.getElementById('invoiceNo').value || '').replace(/[^a-zA-Z0-9]/gi, '');
-        const buyer = getBuyerName();
-        const invoiceDateVal = document.getElementById('invoiceDate').value;
-        const fileDate = formatDateYYMMDD(invoiceDateVal);
-        const filename = `${invoiceNo}-${buyer}-${fileDate}.pdf`;
+async function uploadPdfToDrive(pdfBlob, filename, folderId) {
+  const boundary = 'foo_bar_baz';
+  const delimiter = `\r\n--${boundary}\r\n`;
+  const closeDelim = `\r\n--${boundary}--`;
+  const metadata = { name: filename, mimeType: 'application/pdf', parents: [folderId] };
 
-        const pdfBlob = await generatePDFBlob();
-        await uploadPdfToDrive(pdfBlob, filename, folderId);
-        alert('Invoice uploaded successfully to your Google Drive:\nFile: ' + filename + '\nFolder: ' + folderName);
-      } catch (e) {
-        alert('Upload failed:\n' + (e.message || e));
-        console.error(e);
-      }
-      this.disabled = false;
-    });
-  } else {
-    console.error("Element #uploadToDrive not found!");
-  }
-});
+  const fileData = await new Promise(res => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result);
+    reader.readAsBinaryString(pdfBlob);
+  });
+  const base64data = btoa(fileData);
 
-const errorDetails = {
-  code: 500,
-  data: { id: 123 }
-};
+  const multipartRequestBody =
+    delimiter + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify(metadata) +
+    delimiter + 'Content-Type: application/pdf\r\nContent-Transfer-Encoding: base64\r\n\r\n' +
+    base64data + closeDelim;
 
-// Include details in the message
-throw new Error(`API error: ${JSON.stringify(errorDetails)}`);
-
-// Or attach details to the error object (requires a try-catch block to access)
-try {
-  const err = new Error("API error");
-  err.details = errorDetails;
-  throw err;
-} catch (e) {
-  console.error(e.message, e.details);
+  const resp = await gapi.client.request({
+    path: '/upload/drive/v3/files',
+    method: 'POST',
+    params: { uploadType: 'multipart' },
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body: multipartRequestBody
+  });
+  return resp.result;
 }
 
 function loadGapi() {
@@ -314,9 +215,90 @@ function loadGapi() {
   s.async = true;
   document.body.appendChild(s);
 }
-if (document.readyState === 'loading') {        // still parsing?
-  document.addEventListener('DOMContentLoaded', loadGapi); // safe run
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadGapi);
 } else {
-  loadGapi(); // DOM already ready
+  loadGapi();
 }
 
+// ========== FINALIZE UPLOAD ==========
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('uploadToDrive')?.addEventListener('click', async function () {
+    this.disabled = true;
+    try {
+      await authenticate();
+      const folderId = await getOrCreateFolder(getMonthFolderName());
+      const filename = `${getInvoiceFilename()}.pdf`;
+      const pdfBlob = await generatePDFBlob();
+      await uploadPdfToDrive(pdfBlob, filename, folderId);
+      alert(`✅ Uploaded: ${filename}`);
+    } catch (e) {
+      alert(`❌ Upload failed: ${e.message}`);
+      console.error(e);
+    }
+    this.disabled = false;
+  });
+});
+
+// ========== HELPERS ==========
+function getInvoiceFilename() {
+  const invoiceNo = document.getElementById('invoiceNo').value.replace(/[^\w]/g, '');
+  const buyer = (document.getElementById('buyerName').value || 'Buyer').split('\n')[0].replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+  const date = new Date(document.getElementById('invoiceDate').value || Date.now());
+  return `${invoiceNo}-${buyer}-${date.toISOString().slice(2, 10).replace(/-/g, '/')}`;
+}
+
+function getMonthFolderName() {
+  const d = new Date(document.getElementById('invoiceDate').value || Date.now());
+  return `Shakuntalam Pi ${d.toLocaleString('default', { month: 'long' })}`;
+}
+
+let pendingBlob = null;
+
+    function generateInvoice() {
+      // Simulate PDF generation using Blob
+      const content = 'Invoice Data: ' + new Date().toLocaleString();
+      const blob = new Blob([content], { type: 'application/pdf' });
+      previewPDF(blob);
+
+      if (!navigator.onLine) {
+        pendingBlob = blob;
+        localStorage.setItem('pendingInvoice', content);
+        document.getElementById('offlineNotice').style.display = 'block';
+      } else {
+        uploadPDF(blob);
+      }
+    }
+
+    function previewPDF(blob) {
+      const url = URL.createObjectURL(blob);
+      document.getElementById('pdfPreview').src = url;
+      document.querySelector('.preview-box').style.display = 'block';
+    }
+
+    function uploadPDF(blob) {
+      alert('Uploading invoice...');
+      // Replace this with actual Google Drive upload logic
+      document.getElementById('offlineNotice').style.display = 'none';
+      document.querySelector('.preview-box').style.display = 'none';
+    }
+
+    function uploadWhenOnline() {
+      if (pendingBlob && navigator.onLine) {
+        uploadPDF(pendingBlob);
+    window.addEventListener('online', () => {
+      const savedContent = localStorage.getItem('pendingInvoice');
+      if (savedContent) {
+        const blob = new Blob([savedContent], { type: 'application/pdf' });
+        previewPDF(blob);
+        pendingBlob = blob;
+      }
+    });    pendingBlob = null;
+        localStorage.removeItem('pendingInvoice');
+      } else {
+        alert('Still offline. Try again later.');
+      }
+    }
+
+    
