@@ -27,10 +27,39 @@
     .freight-row input { width: 100%; padding: 5px; }
     .totals-table { float: right; width: 300px; border-collapse: collapse; }
     .totals-table td { border: 1px solid #000; padding: 6px; font-size: 14px; }
-    @media print { .btn, .freight-row { display: none; } @page { size: A4; margin: 20mm; } }
+    @media print 
+    { .btn, .freight-row { display: none !important; } @page { size: A4; margin: 20mm; } }
+
+
     .inline-field, .inline-date, .inline-state { border: none; padding: 2px 6px; font-size: 15px; background: transparent; outline: none; font-style:initial; }
     .info-table input{ width: 50%; margin-left: 5px; }
     select {padding: 5px;}  body { font-family: Arial, sans-serif; max-width: 920px; margin: auto; padding: 20px; background: #fff; }
     h1, h2, h3, h4, p { margin: 0; padding: 0; }
     .preview-box { margin-top: 20px; display: none; border: 1px solid #ccc; padding: 10px; }
+    
     .offline-notice { color: red; display: none; margin-top: 10px; }
+
+.invoice-a4 {
+  width: 794px;   /* A4 width in pixels at 96dpi */
+  height: 1123px; /* A4 height in pixels at 96dpi */
+  background: #fff;
+  margin: 0 auto;
+  padding: 40px 30px;
+  box-sizing: border-box;
+  /* Optional: add border for visual debugging */
+  /* border: 1px solid #ccc; */
+}
+@media print {
+  .invoice-a4 {
+    width: auto;
+    height: auto;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+.pdf-export .btn,
+.pdf-export .freight-row {
+  display: none !important;
+}
+
