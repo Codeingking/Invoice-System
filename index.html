@@ -6,107 +6,107 @@
   <link rel="stylesheet" href="invoice.css">
 <script src="invoice.js" defer></script>
 
-
   <!-- Load jsPDF and html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
-  <h1 style="text-align: center;">SHAKUNTALAM</h1> 
-  <div style="text-align: center;"><b>PERFORMA INVOICE</b></div>
+  <div class="invoice-a4">
+    <h1 style="text-align: center;">SHAKUNTALAM</h1> 
+    <div style="text-align: center;"><b>PERFORMA INVOICE</b></div>
 
-  <div class="header">
-    <div><b>GSTIN : 07AIDPG5020H2ZQ</b></div>
-    <div><b>MOB : +91 9910927068</b></div>
-  </div>
+    <div class="header">
+      <div><b>GSTIN : 07AIDPG5020H2ZQ</b></div>
+      <div><b>MOB : +91 9910927068</b></div>
+    </div>
 
-  <div class="company-info">
-    <h3>SHAKUNTALAM</h3>
-    <p>DEALS IN ALL TILES AND SANITARY</p>
-    <p>E-4, DEVLI ROAD KHANPUR, NEW DELHI-110080</p>
-    <p>EMAIL : 14.dhruv@gmail.com</p>
-  </div>
+    <div class="company-info">
+      <h3>SHAKUNTALAM</h3>
+      <p>DEALS IN ALL TILES AND SANITARY</p>
+      <p>E-4, DEVLI ROAD KHANPUR, NEW DELHI-110080</p>
+      <p>EMAIL : 14.dhruv@gmail.com</p>
+    </div>
 
-  <div class="items-section">
-    <table class="info-table">
+    <div class="items-section">
+      <table class="info-table">
+        <tr>
+          <td class="invoice"><b>Invoice No.<input id="invoiceNo" class="inline-field"></b></td> 
+            <td class="State" ><b>State:</b><input value="Delhi 07" class="inline-state" ></td>
+             <td class="Date" ><b>Date:</b><input id="invoiceDate" type="date" class="inline-date" ></td>
+        </tr>
+      </table>
+
+      <div class="row-flex">
+        <div>
+          <p><b>Details of Buyer | Billed to:</b></p>
+          <textarea id="buyerName" rows="5"></textarea>
+        </div>
+        <div>
+          <p><b>Ship To:</b></p>
+          <textarea id="shipTo" rows="5"></textarea>
+        </div>
+      </div>
+
+      <table id="productTable">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="fixed-rate">Rate</th>
+            <th class="fixed-box">Boxes</th>
+            <th class="fixed-sqft">SqFt</th>
+            <th class="fixed-gst">GST</th>
+            <th class="amount fixed-amount">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="productBody"></tbody>
+        
+      </table>
+    </div>
+
+    <button class="btn btn-add" onclick="addRow()">Add Product</button>
+
+    <div class="freight-row">
+      <label for="deliveryCharge"><input type="number" placeholder=" FREIGHT EXTRA (₹):" id="deliveryCharge" oninput="calculateTotal()"></label>
+    </div>
+
+    <table class="totals-table">
       <tr>
-        <td class="invoice"><b>Invoice No.<input id="invoiceNo" class="inline-field"></b></td> 
-          <td class="State" ><b>State:</b><input value="Delhi 07" class="inline-state" ></td>
-           <td class="Date" ><b>Date:</b><input id="invoiceDate" type="date" class="inline-date" ></td>
+        <td><b>Total Amount With GST :</b></td>
+        <td><b>₹<span id="grandTotal"></span></b></td>
+      </tr>
+      <tr>
+        <td><b>All GST Amount</b></td>
+        <td>₹<span id="gstAmount"></span></td>
+      </tr>
+      <tr id="deliveryLine" style="display:none;">
+        <td><b>FREIGHT EXTRA (incl. 18% GST)</b></td>
+        <td><b>₹<span id="deliveryAmount">00.00</span></b></td>
+      </tr>
+      <tr>
+        <td><b>Total Amount After Tax :</b></td>
+        <td><b>₹<span id="finalAmount"></span></b></td>
       </tr>
     </table>
 
-    <div class="row-flex">
-      <div>
-        <p><b>Details of Buyer | Billed to:</b></p>
-        <textarea id="buyerName" rows="5"></textarea>
-      </div>
-      <div>
-        <p><b>Ship To:</b></p>
-        <textarea id="shipTo" rows="5"></textarea>
-      </div>
+    <div class="note">
+      <p>[ E&OE ]</p>
+      <ol>
+        <li>Goods once sold will not be refunded</li>
+        <li>100% Advance payment.</li>
+        <li>Quote is valid for 24 hours only</li>
+        <li>All disputes subject to Delhi jurisdiction only</li>
+        <li>Freight charges will be extra, as actual if applicable</li>
+      </ol>
     </div>
 
-    <table id="productTable">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th class="fixed-rate">Rate</th>
-          <th class="fixed-box">Boxes</th>
-          <th class="fixed-sqft">SqFt</th>
-          <th class="fixed-gst">GST</th>
-          <th class="amount fixed-amount">Amount</th>
-        </tr>
-      </thead>
-      <tbody id="productBody"></tbody>
-      
-    </table>
+    <p class="signature" style="text-align:right; margin-top: 50px;">
+      For :- <b>SHAKUNTALAM</b><br><br><br>
+      Authorised Signatory
+    </p>
   </div>
-
-  <button class="btn btn-add" onclick="addRow()">Add Product</button>
-
-  <div class="freight-row">
-    <label for="deliveryCharge"><input type="number" placeholder=" FREIGHT EXTRA (₹):" id="deliveryCharge" oninput="calculateTotal()"></label>
-  </div>
-
-  <table class="totals-table">
-    <tr>
-      <td><b>Total Amount With GST :</b></td>
-      <td><b>₹<span id="grandTotal"></span></b></td>
-    </tr>
-    <tr>
-      <td><b>All GST Amount</b></td>
-      <td>₹<span id="gstAmount"></span></td>
-    </tr>
-    <tr id="deliveryLine" style="display:none;">
-      <td><b>FREIGHT EXTRA (incl. 18% GST)</b></td>
-      <td><b>₹<span id="deliveryAmount">00.00</span></b></td>
-    </tr>
-    <tr>
-      <td><b>Total Amount After Tax :</b></td>
-      <td><b>₹<span id="finalAmount"></span></b></td>
-    </tr>
-  </table>
-
-  <div class="note">
-    <p>[ E&OE ]</p>
-    <ol>
-      <li>Goods once sold will not be refunded</li>
-      <li>100% Advance payment.</li>
-      <li>Quote is valid for 24 hours only</li>
-      <li>All disputes subject to Delhi jurisdiction only</li>
-      <li>Freight charges will be extra, as actual if applicable</li>
-    </ol>
-  </div>
-
-  <p class="signature" style="text-align:right; margin-top: 50px;">
-    For :- <b>SHAKUNTALAM</b><br><br><br>
-    Authorised Signatory
-  </p>
 
   <button class="btn" onclick="window.print()">🖨️ Print Invoice</button>
-  <button id="uploadToDrive" class="btn" style="background:#4285f4; color:#fff" disabled>Upload to Google Drive</button>
   <button onclick="generateInvoice()">Generate PDF</button>
   <div class="offline-notice" id="offlineNotice">⚠️ You are offline. The invoice will be saved locally.</div>
   <div class="preview-box">
