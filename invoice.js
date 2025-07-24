@@ -170,12 +170,17 @@ async function getOrCreateFolder(folderName) {
 }
 
 function generatePDFBlob() {
-  return html2canvas(document.body, { scale: 2 }).then(canvas => {
+  const invoiceElem = document.querySelector('.invoice-a4');
+  // Add .pdf-export class to hide buttons and freight row
+  invoiceElem.classList.add('pdf-export');
+  return html2canvas(invoiceElem, { scale: 2 }).then(canvas => {
     const img = canvas.toDataURL('image/png');
     const pdf = new jspdf.jsPDF({ unit: 'pt', format: 'a4' });
     const w = pdf.internal.pageSize.getWidth();
-    const h = canvas.height * w / canvas.width;
+    const h = pdf.internal.pageSize.getHeight();
     pdf.addImage(img, 'PNG', 0, 0, w, h);
+    // Remove .pdf-export class after capture
+    invoiceElem.classList.remove('pdf-export');
     return pdf.output('blob');
   });
 }
@@ -243,10 +248,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ========== HELPERS ==========
 function getInvoiceFilename() {
-  const invoiceNo = document.getElementById('invoiceNo').value.replace(/[^\w]/g, '');
-  const buyer = (document.getElementById('buyerName').value || 'Buyer').split('\n')[0].replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-  const date = new Date(document.getElementById('invoiceDate').value || Date.now());
-  return `${invoiceNo}-${buyer}-${date.toISOString().slice(2, 10).replace(/-/g, '/')}`;
+  // Get invoice number, force lowercase and remove non-alphanumerics except digits
+  let invoiceNo = document.getElementById('invoiceNo').value.replace(/[^\d]/g, '');
+  invoiceNo = 'pi' + invoiceNo.padStart(3, '0'); // e.g., pi001
+
+  // Get buyer name, first word, lowercase, no spaces or special chars
+  let buyer = (document.getElementById('buyerName').value || 'buyer')
+    .split('\n')[0]
+    .split(' ')[0]
+    .replace(/[^\w-]/g, '')
+    .toLowerCase();
+
+  // Get date in yy-mm-dd
+  const dateObj = new Date(document.getElementById('invoiceDate').value || Date.now());
+  const yy = String(dateObj.getFullYear()).slice(-2);
+  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const dd = String(dateObj.getDate()).padStart(2, '0');
+  const date = `${yy}-${mm}-${dd}`;
+
+  return `${invoiceNo}-${buyer}-${date}`;
 }
 
 function getMonthFolderName() {
@@ -255,50 +275,158 @@ function getMonthFolderName() {
 }
 
 let pendingBlob = null;
+let lastGeneratedBlob = null; // Store the last generated PDF blob
 
-    function generateInvoice() {
-      // Simulate PDF generation using Blob
-      const content = 'Invoice Data: ' + new Date().toLocaleString();
-      const blob = new Blob([content], { type: 'application/pdf' });
-      previewPDF(blob);
+async function generateInvoice() {
+  // Generate real PDF from invoice content
+  try {
+    const pdfBlob = await generatePDFBlob();
+    lastGeneratedBlob = pdfBlob;
+    // Set the document title to only the file name (no prefix)
+    document.title = getInvoiceFilename();
+    showPdfActions(pdfBlob);
 
-      if (!navigator.onLine) {
-        pendingBlob = blob;
-        localStorage.setItem('pendingInvoice', content);
-        document.getElementById('offlineNotice').style.display = 'block';
-      } else {
-        uploadPDF(blob);
-      }
-    }
-
-    function previewPDF(blob) {
-      const url = URL.createObjectURL(blob);
-      document.getElementById('pdfPreview').src = url;
-      document.querySelector('.preview-box').style.display = 'block';
-    }
-
-    function uploadPDF(blob) {
-      alert('Uploading invoice...');
-      // Replace this with actual Google Drive upload logic
+    if (!navigator.onLine) {
+      pendingBlob = pdfBlob;
+      localStorage.setItem('pendingInvoice', 'pending'); // Just a flag, as PDF is binary
+      document.getElementById('offlineNotice').style.display = 'block';
+    } else {
       document.getElementById('offlineNotice').style.display = 'none';
-      document.querySelector('.preview-box').style.display = 'none';
     }
+  } catch (e) {
+    alert('Failed to generate PDF: ' + e.message);
+  }
+}
 
-    function uploadWhenOnline() {
-      if (pendingBlob && navigator.onLine) {
-        uploadPDF(pendingBlob);
-    window.addEventListener('online', () => {
-      const savedContent = localStorage.getItem('pendingInvoice');
-      if (savedContent) {
-        const blob = new Blob([savedContent], { type: 'application/pdf' });
-        previewPDF(blob);
-        pendingBlob = blob;
-      }
-    });    pendingBlob = null;
-        localStorage.removeItem('pendingInvoice');
+function showPdfActions(blob) {
+  // Remove preview box if it exists
+  const previewBox = document.querySelector('.preview-box');
+  if (previewBox) previewBox.style.display = 'none';
+
+  // Remove any previous action container
+  let actionBox = document.getElementById('pdfActionBox');
+  if (actionBox) actionBox.remove();
+
+  // Create a new action container
+  actionBox = document.createElement('div');
+  actionBox.id = 'pdfActionBox';
+  actionBox.style.margin = '20px 0';
+
+  // File name display
+  const fileNameElem = document.createElement('div');
+  fileNameElem.textContent = 'File name: ' + getInvoiceFilename() + '.pdf';
+  fileNameElem.style.marginBottom = '10px';
+  actionBox.appendChild(fileNameElem);
+
+  // Download button
+  const dlBtn = document.createElement('button');
+  dlBtn.id = 'downloadPdfBtn';
+  dlBtn.className = 'btn';
+  dlBtn.textContent = 'Download PDF';
+  dlBtn.onclick = function() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = getInvoiceFilename() + '.pdf';
+    a.click();
+  };
+  actionBox.appendChild(dlBtn);
+
+  // Print button
+  const printBtn = document.createElement('button');
+  printBtn.id = 'printPdfBtn';
+  printBtn.className = 'btn';
+  printBtn.style.marginLeft = '10px';
+  printBtn.textContent = 'Print';
+  printBtn.onclick = function() {
+    const url = URL.createObjectURL(blob);
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    iframe.onload = function() {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        document.body.removeChild(iframe);
+      }, 100);
+    };
+  };
+  actionBox.appendChild(printBtn);
+
+  // Upload button
+  const uploadBtn = document.createElement('button');
+  uploadBtn.id = 'uploadPdfBtn';
+  uploadBtn.className = 'btn';
+  uploadBtn.style.marginLeft = '10px';
+  uploadBtn.textContent = 'Upload to Drive';
+  uploadBtn.onclick = async function() {
+    await uploadPDF(blob);
+  };
+  actionBox.appendChild(uploadBtn);
+
+  // Insert the action box after the invoice form or at a logical place
+  const form = document.getElementById('invoiceForm') || document.body;
+  form.parentNode.insertBefore(actionBox, form.nextSibling);
+}
+
+// Remove or disable the previewPDF function
+function previewPDF(blob) {
+  // No longer used
+}
+
+async function uploadPDF(blob) {
+  try {
+    await authenticate();
+    const folderId = await getOrCreateFolder(getMonthFolderName());
+    const filename = `${getInvoiceFilename()}.pdf`;
+    await uploadPdfToDrive(blob, filename, folderId);
+    alert(`✅ Uploaded: ${filename}`);
+    document.getElementById('offlineNotice').style.display = 'none';
+    // The action box is now handled by showPdfActions, so no need to remove it here
+  } catch (e) {
+    alert(`❌ Upload failed: ${e.message}`);
+    console.error(e);
+  }
+}
+
+function uploadWhenOnline() {
+  if (pendingBlob && navigator.onLine) {
+    uploadPDF(pendingBlob);
+    pendingBlob = null;
+    localStorage.removeItem('pendingInvoice');
+  } else {
+    alert('Still offline. Try again later.');
+  }
+}
+
+// Add event for preview box upload button
+window.addEventListener('DOMContentLoaded', () => {
+  const previewUploadBtn = document.querySelector('.preview-box button[onclick="uploadWhenOnline()"]');
+  if (previewUploadBtn) {
+    previewUploadBtn.onclick = async function() {
+      if (lastGeneratedBlob) {
+        await uploadPDF(lastGeneratedBlob);
       } else {
-        alert('Still offline. Try again later.');
+        alert('Please generate the invoice PDF first.');
       }
-    }
+    };
+  }
+});
+
+function printPreview() {
+  // Show the preview box if hidden
+  document.querySelector('.preview-box').style.display = 'block';
+  // Optionally hide other elements
+  window.print();
+}
+
+['invoiceNo', 'buyerName', 'invoiceDate'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', () => {
+      document.title = getInvoiceFilename();
+    });
+  }
+});
 
     
