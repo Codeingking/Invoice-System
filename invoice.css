@@ -28,7 +28,7 @@
     .totals-table { float: right; width: 300px; border-collapse: collapse; }
     .totals-table td { border: 1px solid #000; padding: 6px; font-size: 14px; }
     @media print 
-    { .btn, .freight-row { display: none !important; } @page { size: A4; margin: 20mm; } }
+    { .btn, .freight-row, .gen { display: none !important; } @page { size: A4; margin: 20mm; } }
 
 
     .inline-field, .inline-date, .inline-state { border: none; padding: 2px 6px; font-size: 15px; background: transparent; outline: none; font-style:initial; }
