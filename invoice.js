@@ -47,7 +47,7 @@ const productData = {
       "CTY00206": { rate: 85, sqft: 53.82, gst: 12 },
       "CTY00208": { rate: 85, sqft: 53.82, gst: 12 },
       "CTY00211": { rate: 85, sqft: 53.82, gst: 12 },
-      "CTY0021O": { rate: 85, sqft: 53.82, gst: 12 },
+      "CTY00210": { rate: 85, sqft: 53.82, gst: 12 },
       "CTY00216": { rate: 85, sqft: 53.82, gst: 12 },
       "CTY00217": { rate: 85, sqft: 53.82, gst: 12 }
     };
